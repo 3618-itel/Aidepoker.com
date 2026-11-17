@@ -1,0 +1,983 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Poker Aide Hold'em 2009</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      font-family: Tahoma, "Segoe UI", Arial, sans-serif;
+      background-color: #d5dce6;
+      color: #1a202c;
+      font-size: 13px;
+    }
+
+    /* Fenêtre utilitaire 2009 sobre */
+    .win-box {
+      background: #eceff4;
+      border: 1px solid #8c99ab;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.18);
+    }
+
+    .win-title {
+      background: linear-gradient(180deg, #4b6a91 0%, #314b6e 100%);
+      color: #ffffff;
+      border-bottom: 1px solid #22354f;
+    }
+
+    .win-toolbar {
+      background: linear-gradient(180deg, #f7f9fc 0%, #dfe5ee 100%);
+      border-bottom: 1px solid #9aa7b8;
+    }
+
+    .win-panel {
+      background: #f8fafc;
+      border: 1px solid #9aa7b8;
+    }
+
+    /* Boutons classiques 2009 */
+    .btn-win {
+      background: linear-gradient(180deg, #ffffff 0%, #e4e9f0 100%);
+      border: 1px solid #8a97a8;
+      color: #1e293b;
+      cursor: pointer;
+    }
+    .btn-win:hover:not(:disabled) {
+      background: linear-gradient(180deg, #f0f7ff 0%, #d2e6fa 100%);
+      border-color: #3b76b0;
+    }
+    .btn-win:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .btn-win-blue {
+      background: linear-gradient(180deg, #5da4e8 0%, #2d70b5 100%);
+      border: 1px solid #1e5085;
+      color: #ffffff;
+      cursor: pointer;
+    }
+    .btn-win-blue:hover:not(:disabled) {
+      background: linear-gradient(180deg, #6eb2f2 0%, #377dc4 100%);
+    }
+    .btn-win-blue:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    /* Tapis vert simple */
+    .felt-2009 {
+      background-color: #1e6b3a;
+      border: 2px solid #144a27;
+      box-shadow: inset 0 0 12px rgba(0, 0, 0, 0.35);
+    }
+
+    /* Carte à jouer nette */
+    .card-2009 {
+      background: #ffffff;
+      border: 1px solid #525e6c;
+      box-shadow: 1px 1px 0 rgba(0, 0, 0, 0.25);
+      user-select: none;
+    }
+    .card-2009:hover:not(:disabled) {
+      border-color: #1d62b5;
+      background: #fffef0;
+    }
+
+    /* Emplacement de carte */
+    .slot-2009 {
+      border: 1px dashed rgba(255, 255, 255, 0.5);
+      background: rgba(0, 0, 0, 0.2);
+    }
+    .slot-2009.active {
+      border: 1px solid #ffd54f;
+      background: rgba(255, 213, 79, 0.18);
+    }
+    .slot-2009.locked {
+      border: 1px dotted rgba(255, 255, 255, 0.22);
+      background: rgba(0, 0, 0, 0.35);
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* Adaptation plein écran sur mobile (<= 768px) */
+    @media (max-width: 768px) {
+      html, body {
+        height: 100dvh;
+        overflow: hidden;
+      }
+    }
+  </style>
+</head>
+<body class="h-[100dvh] md:h-auto md:min-h-screen p-0 md:p-4 flex justify-center items-stretch md:items-start overflow-hidden md:overflow-auto">
+
+  <div class="win-box w-full max-w-3xl h-full md:h-auto md:rounded-sm overflow-hidden flex flex-col">
+
+    <!-- EN-TÊTE MINIMALISTE -->
+    <header class="win-title px-3 py-2 md:py-1.5 flex items-center justify-between shrink-0">
+      <span class="font-bold text-sm">Poker Aide Hold'em 2009</span>
+      <span id="phase-indicator" class="text-xs font-bold bg-black/25 px-2 py-0.5 rounded-sm">Étape : Préflop</span>
+    </header>
+
+    <!-- BARRE D'OUTILS COURTE -->
+    <div class="win-toolbar px-2.5 py-2 flex flex-wrap items-center justify-between gap-1.5 shrink-0">
+      <div class="flex items-center gap-1.5">
+        <label for="opponents-select" class="text-xs font-bold text-slate-700">Adversaires :</label>
+        <select id="opponents-select" class="bg-white border border-slate-400 rounded-sm px-2 py-1 md:px-1.5 md:py-0.5 text-xs font-bold">
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+          <option value="4">4</option>
+          <option value="5" selected>5</option>
+          <option value="6">6</option>
+          <option value="7">7</option>
+          <option value="8">8</option>
+          <option value="9">9</option>
+        </select>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-1">
+        <button id="btn-next-step" type="button" class="btn-win-blue px-2.5 py-1.5 md:py-1 rounded-sm text-xs font-bold">Étape suivante »</button>
+        <button id="btn-undo" type="button" class="btn-win px-2 py-1.5 md:py-1 rounded-sm text-xs">Annuler</button>
+        <button id="btn-remove" type="button" class="btn-win px-2 py-1.5 md:py-1 rounded-sm text-xs">Retirer</button>
+        <button id="btn-reset" type="button" class="btn-win px-2 py-1.5 md:py-1 rounded-sm text-xs">Réinitialiser</button>
+        <button id="btn-new-game" type="button" class="btn-win px-2 py-1.5 md:py-1 rounded-sm text-xs font-bold">Nouvelle partie</button>
+      </div>
+    </div>
+
+    <div class="p-2.5 flex-1 flex flex-col justify-between md:justify-start gap-2.5 overflow-hidden">
+
+      <!-- BLOC 1 : LA TABLE & VOS CARTES -->
+      <section class="felt-2009 rounded-sm p-3 md:p-3 flex flex-col sm:flex-row items-center justify-around sm:justify-between gap-3 shrink-0">
+        <!-- Ma main (2 cartes) -->
+        <div class="flex flex-col items-center">
+          <span class="text-xs md:text-[11px] font-bold uppercase text-amber-200 mb-1.5 md:mb-1">Ma main</span>
+          <div class="flex items-center gap-2 md:gap-1.5">
+            <div id="hero-slot-0" class="slot-2009 active w-14 h-20 sm:w-14 sm:h-20 rounded-sm flex items-center justify-center text-xs md:text-[11px] text-white/85 cursor-pointer" title="Cliquer pour choisir ou retirer">1</div>
+            <div id="hero-slot-1" class="slot-2009 active w-14 h-20 sm:w-14 sm:h-20 rounded-sm flex items-center justify-center text-xs md:text-[11px] text-white/85 cursor-pointer" title="Cliquer pour choisir ou retirer">2</div>
+          </div>
+        </div>
+
+        <!-- Table (5 cartes progressives) -->
+        <div class="flex flex-col items-center">
+          <span class="text-xs md:text-[11px] font-bold uppercase text-emerald-100 mb-1.5 md:mb-1">Table (Flop • Turn • River)</span>
+          <div class="flex items-center gap-1.5">
+            <div id="board-slot-0" class="slot-2009 locked w-13 h-19 sm:w-14 sm:h-20 rounded-sm flex items-center justify-center text-[11px] md:text-[10px] text-white/75" style="min-width: 3.1rem; min-height: 4.5rem;">Flop</div>
+            <div id="board-slot-1" class="slot-2009 locked w-13 h-19 sm:w-14 sm:h-20 rounded-sm flex items-center justify-center text-[11px] md:text-[10px] text-white/75" style="min-width: 3.1rem; min-height: 4.5rem;">Flop</div>
+            <div id="board-slot-2" class="slot-2009 locked w-13 h-19 sm:w-14 sm:h-20 rounded-sm flex items-center justify-center text-[11px] md:text-[10px] text-white/75" style="min-width: 3.1rem; min-height: 4.5rem;">Flop</div>
+            <div class="w-0.5 md:w-1"></div>
+            <div id="board-slot-3" class="slot-2009 locked w-13 h-19 sm:w-14 sm:h-20 rounded-sm flex items-center justify-center text-[11px] md:text-[10px] text-white/75" style="min-width: 3.1rem; min-height: 4.5rem;">Turn</div>
+            <div id="board-slot-4" class="slot-2009 locked w-13 h-19 sm:w-14 sm:h-20 rounded-sm flex items-center justify-center text-[11px] md:text-[10px] text-white/75" style="min-width: 3.1rem; min-height: 4.5rem;">River</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- BLOC 2 : RÉSULTAT ESSENTIEL -->
+      <section class="win-panel rounded-sm p-2.5 flex-1 md:flex-none flex flex-col justify-center space-y-2.5 md:space-y-2">
+        <!-- 3 chiffres clés en gros -->
+        <div class="grid grid-cols-3 gap-2 text-center">
+          <div class="bg-white border border-slate-300 rounded-sm py-2 md:py-1.5 px-1">
+            <div class="text-[11px] font-bold text-emerald-800 uppercase">Gagner</div>
+            <div id="win-pct" class="text-xl sm:text-xl font-extrabold text-emerald-700 leading-tight">-- %</div>
+          </div>
+          <div class="bg-white border border-slate-300 rounded-sm py-2 md:py-1.5 px-1">
+            <div class="text-[11px] font-bold text-amber-800 uppercase">Égalité</div>
+            <div id="tie-pct" class="text-xl sm:text-xl font-extrabold text-amber-600 leading-tight">-- %</div>
+          </div>
+          <div class="bg-white border border-slate-300 rounded-sm py-2 md:py-1.5 px-1">
+            <div class="text-[11px] font-bold text-rose-800 uppercase">Perdre</div>
+            <div id="lose-pct" class="text-xl sm:text-xl font-extrabold text-rose-700 leading-tight">-- %</div>
+          </div>
+        </div>
+
+        <!-- 1 barre simple récapitulative -->
+        <div class="w-full h-3 md:h-2.5 bg-slate-300 border border-slate-400 rounded-sm overflow-hidden flex">
+          <div id="bar-win" class="bg-emerald-600 h-full transition-all duration-150" style="width: 0%"></div>
+          <div id="bar-tie" class="bg-amber-400 h-full transition-all duration-150" style="width: 0%"></div>
+          <div id="bar-lose" class="bg-rose-600 h-full transition-all duration-150" style="width: 0%"></div>
+        </div>
+
+        <!-- Combinaison / Appréciation + 1 ligne courte -->
+        <div class="bg-white border border-slate-300 rounded-sm px-2.5 py-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
+          <div class="flex items-center gap-2 flex-wrap">
+            <span id="combo-title" class="font-bold text-sm text-slate-900">Sélectionnez vos 2 cartes</span>
+            <span id="quality-badge" class="hidden text-xs font-bold px-2 py-0.5 rounded-sm border"></span>
+          </div>
+          <div id="short-note" class="text-xs text-slate-700">Touchez une carte sur le tapis pour la choisir.</div>
+        </div>
+      </section>
+
+      <!-- BOUTON MOBILE DÉDIÉ POUR OUVRIR LE SÉLECTEUR DE CARTES -->
+      <button id="btn-open-picker-mobile" type="button" class="md:hidden btn-win-blue w-full py-3 rounded-sm font-bold text-sm shadow-sm shrink-0">
+        Choisir une carte
+      </button>
+
+      <!-- BLOC 3 : GRILLE COMPACTE DES 52 CARTES (ORDINATEUR UNIQUEMENT) -->
+      <section class="hidden md:block win-panel rounded-sm p-2">
+        <div id="deck-container" class="space-y-1"></div>
+      </section>
+
+    </div>
+  </div>
+
+  <!-- MODALE / TIROIR MOBILE DE SÉLECTION DES 52 CARTES CLASSÉES PAR TYPE -->
+  <div id="mobile-picker-modal" class="hidden fixed inset-0 z-50 bg-black/60 flex flex-col justify-end md:hidden">
+    <div class="win-box w-full max-h-[88dvh] rounded-t-md flex flex-col overflow-hidden">
+      <div class="win-title px-3 py-2 flex items-center justify-between shrink-0">
+        <span id="picker-target-label" class="font-bold text-sm">Choisir une carte</span>
+        <button id="btn-close-picker" type="button" class="btn-win px-3 py-1 rounded-sm text-xs font-bold">OK / Fermer</button>
+      </div>
+      <div id="mobile-deck-container" class="p-2.5 space-y-2.5 overflow-y-auto bg-[#eceff4]"></div>
+    </div>
+  </div>
+
+  <script>
+    // ============================================================================
+    // DONNÉES & CONSTANTES DU JEU DE 52 CARTES
+    // ============================================================================
+    const SUITS = [
+      { symbol: '♣', name: 'Trèfle', color: 'text-slate-950', deckIdx: 3 },
+      { symbol: '♦', name: 'Carreau', color: 'text-red-600', deckIdx: 2 },
+      { symbol: '♥', name: 'Cœur', color: 'text-red-600', deckIdx: 1 },
+      { symbol: '♠', name: 'Pique', color: 'text-slate-950', deckIdx: 0 }
+    ];
+
+    // Indexation interne des couleurs (0: Pique, 1: Cœur, 2: Carreau, 3: Trèfle)
+    const SUITS_BY_ID = [
+      { symbol: '♠', name: 'Pique', color: 'text-slate-950' },
+      { symbol: '♥', name: 'Cœur', color: 'text-red-600' },
+      { symbol: '♦', name: 'Carreau', color: 'text-red-600' },
+      { symbol: '♣', name: 'Trèfle', color: 'text-slate-950' }
+    ];
+
+    const RANKS = [
+      { code: 'A', label: 'As', value: 14 },
+      { code: 'R', label: 'Roi', value: 13 },
+      { code: 'D', label: 'Dame', value: 12 },
+      { code: 'V', label: 'Valet', value: 11 },
+      { code: '10', label: '10', value: 10 },
+      { code: '9', label: '9', value: 9 },
+      { code: '8', label: '8', value: 8 },
+      { code: '7', label: '7', value: 7 },
+      { code: '6', label: '6', value: 6 },
+      { code: '5', label: '5', value: 5 },
+      { code: '4', label: '4', value: 4 },
+      { code: '3', label: '3', value: 3 },
+      { code: '2', label: '2', value: 2 }
+    ];
+
+    const RANK_NAME_BY_VAL = {
+      14: 'As', 13: 'Roi', 12: 'Dame', 11: 'Valet',
+      10: '10', 9: '9', 8: '8', 7: '7', 6: '6', 5: '5', 4: '4', 3: '3', 2: '2'
+    };
+
+    const HAND_NAMES = [
+      'Carte haute',
+      'Paire',
+      'Deux paires',
+      'Brelan',
+      'Suite',
+      'Couleur',
+      'Full',
+      'Carré',
+      'Quinte flush',
+      'Quinte flush royale'
+    ];
+
+    const FULL_DECK = [];
+    for (let s = 0; s < 4; s++) {
+      for (let r = 0; r < 13; r++) {
+        FULL_DECK.push({
+          id: s * 13 + r,
+          suitIndex: s,
+          rankIndex: r,
+          rankValue: RANKS[r].value,
+          code: RANKS[r].code,
+          label: RANKS[r].label,
+          symbol: SUITS_BY_ID[s].symbol,
+          suitName: SUITS_BY_ID[s].name,
+          color: SUITS_BY_ID[s].color
+        });
+      }
+    }
+
+    const state = {
+      hero: [null, null],
+      board: [null, null, null, null, null],
+      phase: 0, // 0: Préflop, 1: Flop, 2: Turn, 3: River
+      opponents: 5,
+      history: [],
+      targetSlot: null,
+      simToken: 0,
+      pickerOpen: false
+    };
+
+    // ============================================================================
+    // ÉVALUATEUR DE COMBINAISONS POKER (5 À 7 CARTES)
+    // ============================================================================
+    function evaluateFive(c0, c1, c2, c3, c4) {
+      const cards = [c0, c1, c2, c3, c4];
+      const vals = [
+        FULL_DECK[c0].rankValue,
+        FULL_DECK[c1].rankValue,
+        FULL_DECK[c2].rankValue,
+        FULL_DECK[c3].rankValue,
+        FULL_DECK[c4].rankValue
+      ].sort((a, b) => b - a);
+
+      const s0 = FULL_DECK[c0].suitIndex;
+      const isFlush =
+        FULL_DECK[c1].suitIndex === s0 &&
+        FULL_DECK[c2].suitIndex === s0 &&
+        FULL_DECK[c3].suitIndex === s0 &&
+        FULL_DECK[c4].suitIndex === s0;
+
+      // Vérification d'une suite (y compris A-2-3-4-5)
+      let straightHigh = 0;
+      const uniqueVals = [...new Set(vals)];
+      if (uniqueVals.length === 5) {
+        if (uniqueVals[0] - uniqueVals[4] === 4) {
+          straightHigh = uniqueVals[0];
+        } else if (
+          uniqueVals[0] === 14 &&
+          uniqueVals[1] === 5 &&
+          uniqueVals[2] === 4 &&
+          uniqueVals[3] === 3 &&
+          uniqueVals[4] === 2
+        ) {
+          straightHigh = 5;
+        }
+      }
+
+      if (isFlush && straightHigh > 0) {
+        const cat = straightHigh === 14 ? 9 : 8;
+        return (cat << 20) | (straightHigh << 16);
+      }
+
+      // Comptage des occurrences par hauteur
+      const counts = {};
+      for (let i = 0; i < 5; i++) {
+        counts[vals[i]] = (counts[vals[i]] || 0) + 1;
+      }
+      const groups = Object.entries(counts)
+        .map(([v, cnt]) => ({ val: Number(v), cnt }))
+        .sort((a, b) => (b.cnt - a.cnt) || (b.val - a.val));
+
+      // Carré (7)
+      if (groups[0].cnt === 4) {
+        return (7 << 20) | (groups[0].val << 16) | (groups[1].val << 12);
+      }
+
+      // Full (6)
+      if (groups[0].cnt === 3 && groups[1].cnt === 2) {
+        return (6 << 20) | (groups[0].val << 16) | (groups[1].val << 12);
+      }
+
+      // Couleur (5)
+      if (isFlush) {
+        return (5 << 20) | (vals[0] << 16) | (vals[1] << 12) | (vals[2] << 8) | (vals[3] << 4) | vals[4];
+      }
+
+      // Suite (4)
+      if (straightHigh > 0) {
+        return (4 << 20) | (straightHigh << 16);
+      }
+
+      // Brelan (3)
+      if (groups[0].cnt === 3) {
+        return (3 << 20) | (groups[0].val << 16) | (groups[1].val << 12) | (groups[2].val << 8);
+      }
+
+      // Deux paires (2)
+      if (groups[0].cnt === 2 && groups[1].cnt === 2) {
+        return (2 << 20) | (groups[0].val << 16) | (groups[1].val << 12) | (groups[2].val << 8);
+      }
+
+      // Paire (1)
+      if (groups[0].cnt === 2) {
+        return (
+          (1 << 20) |
+          (groups[0].val << 16) |
+          (groups[1].val << 12) |
+          (groups[2].val << 8) |
+          (groups[3].val << 4)
+        );
+      }
+
+      // Carte haute (0)
+      return (vals[0] << 16) | (vals[1] << 12) | (vals[2] << 8) | (vals[3] << 4) | vals[4];
+    }
+
+    function evaluateBest(cardIds) {
+      const n = cardIds.length;
+      if (n === 5) {
+        return {
+          score: evaluateFive(cardIds[0], cardIds[1], cardIds[2], cardIds[3], cardIds[4]),
+          best: cardIds.slice()
+        };
+      }
+      let bestScore = -1;
+      let bestFive = null;
+      for (let a = 0; a < n - 4; a++) {
+        for (let b = a + 1; b < n - 3; b++) {
+          for (let c = b + 1; c < n - 2; c++) {
+            for (let d = c + 1; d < n - 1; d++) {
+              for (let e = d + 1; e < n; e++) {
+                const sc = evaluateFive(cardIds[a], cardIds[b], cardIds[c], cardIds[d], cardIds[e]);
+                if (sc > bestScore) {
+                  bestScore = sc;
+                  bestFive = [cardIds[a], cardIds[b], cardIds[c], cardIds[d], cardIds[e]];
+                }
+              }
+            }
+          }
+        }
+      }
+      return { score: bestScore, best: bestFive };
+    }
+
+    function getComboDetail(cat, bestFive) {
+      const vals = bestFive.map(id => FULL_DECK[id].rankValue).sort((a, b) => b - a);
+      const counts = {};
+      vals.forEach(v => { counts[v] = (counts[v] || 0) + 1; });
+      const groups = Object.entries(counts)
+        .map(([v, cnt]) => ({ val: Number(v), cnt }))
+        .sort((a, b) => (b.cnt - a.cnt) || (b.val - a.val));
+
+      switch (cat) {
+        case 9: return `à ${SUITS_BY_ID[FULL_DECK[bestFive[0]].suitIndex].name.toLowerCase()}`;
+        case 8: return `hauteur ${RANK_NAME_BY_VAL[vals[0] === 14 && vals[1] === 5 ? 5 : vals[0]]}`;
+        case 7: return `de ${RANK_NAME_BY_VAL[groups[0].val]}`;
+        case 6: return `${RANK_NAME_BY_VAL[groups[0].val]} par les ${RANK_NAME_BY_VAL[groups[1].val]}`;
+        case 5: return `à ${SUITS_BY_ID[FULL_DECK[bestFive[0]].suitIndex].name.toLowerCase()}, hauteur ${RANK_NAME_BY_VAL[vals[0]]}`;
+        case 4: return `hauteur ${RANK_NAME_BY_VAL[vals[0] === 14 && vals[1] === 5 ? 5 : vals[0]]}`;
+        case 3: return `de ${RANK_NAME_BY_VAL[groups[0].val]}`;
+        case 2: return `${RANK_NAME_BY_VAL[groups[0].val]} et ${RANK_NAME_BY_VAL[groups[1].val]}`;
+        case 1: return `de ${RANK_NAME_BY_VAL[groups[0].val]}`;
+        default: return `${RANK_NAME_BY_VAL[vals[0]]}`;
+      }
+    }
+
+    // ============================================================================
+    // ANALYSE PRÉFLOP & TIRAGES (OUTS)
+    // ============================================================================
+    function getPreflopSummary(id1, id2) {
+      const c1 = FULL_DECK[id1];
+      const c2 = FULL_DECK[id2];
+      const high = c1.rankValue >= c2.rankValue ? c1 : c2;
+      const low = c1.rankValue >= c2.rankValue ? c2 : c1;
+      const isPair = high.rankValue === low.rankValue;
+      const isSuited = high.suitIndex === low.suitIndex;
+      const gap = high.rankValue - low.rankValue;
+
+      if (isPair) {
+        const note = `Paire servie de ${high.label}`;
+        if (high.rankValue >= 11) {
+          return { quality: 'Excellente main', cls: 'bg-emerald-100 text-emerald-900 border-emerald-400', note };
+        }
+        if (high.rankValue >= 7) {
+          return { quality: 'Bonne main', cls: 'bg-blue-100 text-blue-900 border-blue-400', note };
+        }
+        return { quality: 'Main moyenne', cls: 'bg-amber-100 text-amber-900 border-amber-400', note };
+      }
+
+      const tags = [];
+      if (isSuited) tags.push('assorties');
+      if (gap === 1) tags.push('connectées');
+      const suffix = tags.length ? ` (${tags.join(', ')})` : '';
+      const note = `${high.label} et ${low.label}${suffix}`;
+
+      if (high.rankValue === 14 && low.rankValue >= 12) {
+        return { quality: 'Excellente main', cls: 'bg-emerald-100 text-emerald-900 border-emerald-400', note };
+      }
+      if (
+        (high.rankValue === 14 && (low.rankValue >= 10 || isSuited)) ||
+        (high.rankValue >= 12 && low.rankValue >= 11) ||
+        (isSuited && gap === 1 && high.rankValue >= 8)
+      ) {
+        return { quality: 'Bonne main', cls: 'bg-blue-100 text-blue-900 border-blue-400', note };
+      }
+      if (high.rankValue >= 10 || (isSuited && gap <= 2 && high.rankValue >= 7)) {
+        return { quality: 'Main moyenne', cls: 'bg-amber-100 text-amber-900 border-amber-400', note };
+      }
+      return { quality: 'Mauvaise main', cls: 'bg-rose-100 text-rose-900 border-rose-400', note };
+    }
+
+    function getDrawHint(known) {
+      if (known.length < 5 || known.length >= 7) return '';
+      const used = new Set(known);
+      const curCat = evaluateBest(known).score >> 20;
+
+      // Tirage couleur
+      const suits = [0, 0, 0, 0];
+      known.forEach(id => suits[FULL_DECK[id].suitIndex]++);
+      for (let s = 0; s < 4; s++) {
+        if (suits[s] === 4 && curCat < 5) {
+          return `Tirage couleur à ${SUITS_BY_ID[s].name.toLowerCase()} (9 outs)`;
+        }
+      }
+
+      // Tirage suite
+      if (curCat < 4) {
+        let straightOuts = 0;
+        for (let id = 0; id < 52; id++) {
+          if (used.has(id)) continue;
+          const nextCat = evaluateBest([...known, id]).score >> 20;
+          if (nextCat === 4 || nextCat === 8) straightOuts++;
+        }
+        if (straightOuts >= 8) return `Tirage quinte par les deux bouts (${straightOuts} outs)`;
+        if (straightOuts === 4) return `Tirage quinte ventrale (4 outs)`;
+      }
+
+      // Outs d'amélioration générale
+      let improveOuts = 0;
+      for (let id = 0; id < 52; id++) {
+        if (used.has(id)) continue;
+        const nextCat = evaluateBest([...known, id]).score >> 20;
+        if (nextCat > curCat) improveOuts++;
+      }
+      if (improveOuts > 0) {
+        return `${improveOuts} carte${improveOuts > 1 ? 's' : ''} améliorante${improveOuts > 1 ? 's' : ''} restante${improveOuts > 1 ? 's' : ''}`;
+      }
+      return '';
+    }
+
+    // ============================================================================
+    // SIMULATION MONTE-CARLO (PROBABILITÉS VICTOIRE / ÉGALITÉ / DÉFAITE)
+    // ============================================================================
+    function runSimulation() {
+      const token = ++state.simToken;
+      const winEl = document.getElementById('win-pct');
+      const tieEl = document.getElementById('tie-pct');
+      const loseEl = document.getElementById('lose-pct');
+      const barWin = document.getElementById('bar-win');
+      const barTie = document.getElementById('bar-tie');
+      const barLose = document.getElementById('bar-lose');
+
+      const hero = state.hero.filter(c => c !== null);
+      if (hero.length < 2) {
+        winEl.textContent = '-- %';
+        tieEl.textContent = '-- %';
+        loseEl.textContent = '-- %';
+        barWin.style.width = '0%';
+        barTie.style.width = '0%';
+        barLose.style.width = '0%';
+        return;
+      }
+
+      const board = state.board.filter(c => c !== null);
+      const used = new Set([...hero, ...board]);
+      const remDeck = [];
+      for (let i = 0; i < 52; i++) {
+        if (!used.has(i)) remDeck.push(i);
+      }
+
+      const numOpp = state.opponents;
+      const missingBoard = 5 - board.length;
+      const cardsNeeded = missingBoard + numOpp * 2;
+      const totalTrials = 2500;
+      const batchSize = 500;
+
+      let wins = 0;
+      let ties = 0;
+      let losses = 0;
+      let done = 0;
+
+      function stepBatch() {
+        if (token !== state.simToken) return;
+
+        const target = Math.min(done + batchSize, totalTrials);
+        const deckLen = remDeck.length;
+
+        for (let t = done; t < target; t++) {
+          // Mélange partiel de Fisher-Yates uniquement pour les cartes tirées
+          for (let k = 0; k < cardsNeeded; k++) {
+            const j = k + Math.floor(Math.random() * (deckLen - k));
+            const tmp = remDeck[k];
+            remDeck[k] = remDeck[j];
+            remDeck[j] = tmp;
+          }
+
+          const b0 = board.length > 0 ? board[0] : remDeck[0];
+          const b1 = board.length > 1 ? board[1] : remDeck[1 - board.length];
+          const b2 = board.length > 2 ? board[2] : remDeck[2 - board.length];
+          const b3 = board.length > 3 ? board[3] : remDeck[3 - board.length];
+          const b4 = board.length > 4 ? board[4] : remDeck[4 - board.length];
+
+          const heroScore = evaluateBest([hero[0], hero[1], b0, b1, b2, b3, b4]).score;
+
+          let bestOpp = -1;
+          let ptr = missingBoard;
+          for (let o = 0; o < numOpp; o++) {
+            const oScore = evaluateBest([remDeck[ptr], remDeck[ptr + 1], b0, b1, b2, b3, b4]).score;
+            if (oScore > bestOpp) bestOpp = oScore;
+            ptr += 2;
+          }
+
+          if (heroScore > bestOpp) wins++;
+          else if (heroScore === bestOpp) ties++;
+          else losses++;
+        }
+
+        done = target;
+        const wPct = (wins / done) * 100;
+        const tPct = (ties / done) * 100;
+        const lPct = (losses / done) * 100;
+
+        winEl.textContent = `${wPct.toFixed(1)} %`;
+        tieEl.textContent = `${tPct.toFixed(1)} %`;
+        loseEl.textContent = `${lPct.toFixed(1)} %`;
+        barWin.style.width = `${wPct}%`;
+        barTie.style.width = `${tPct}%`;
+        barLose.style.width = `${lPct}%`;
+
+        if (done < totalTrials) {
+          setTimeout(stepBatch, 0);
+        }
+      }
+
+      stepBatch();
+    }
+
+    // ============================================================================
+    // RENDU DE L'INTERFACE & INTERACTIONS
+    // ============================================================================
+    function getUsedSet() {
+      const s = new Set();
+      state.hero.forEach(c => { if (c !== null) s.add(c); });
+      state.board.forEach(c => { if (c !== null) s.add(c); });
+      return s;
+    }
+
+    function isBoardUnlocked(idx) {
+      if (idx <= 2) return state.phase >= 1;
+      if (idx === 3) return state.phase >= 2;
+      return state.phase >= 3;
+    }
+
+    function renderCardContent(cardId) {
+      const c = FULL_DECK[cardId];
+      return `
+        <div class="w-full h-full bg-white border border-slate-700 rounded-sm flex flex-col items-center justify-center leading-none shadow-sm">
+          <span class="text-base font-extrabold ${c.color}">${c.code}</span>
+          <span class="text-lg ${c.color}">${c.symbol}</span>
+        </div>
+      `;
+    }
+
+    function renderTable() {
+      const phaseNames = ['Préflop', 'Flop', 'Turn', 'River'];
+      document.getElementById('phase-indicator').textContent = `Étape : ${phaseNames[state.phase]}`;
+
+      const nextSlot = findNextSlot();
+
+      // Rendu Ma Main (2 cartes)
+      for (let i = 0; i < 2; i++) {
+        const el = document.getElementById(`hero-slot-${i}`);
+        const cid = state.hero[i];
+        if (cid !== null) {
+          el.className = 'w-14 h-20 rounded-sm cursor-pointer';
+          el.innerHTML = renderCardContent(cid);
+        } else {
+          const isNext = nextSlot && nextSlot.type === 'hero' && nextSlot.idx === i;
+          el.className = `slot-2009 ${isNext ? 'active' : ''} w-14 h-20 rounded-sm flex items-center justify-center text-xs text-white/85 cursor-pointer`;
+          el.textContent = `${i + 1}`;
+        }
+      }
+
+      // Rendu Table (5 cartes)
+      const boardLabels = ['Flop', 'Flop', 'Flop', 'Turn', 'River'];
+      for (let i = 0; i < 5; i++) {
+        const el = document.getElementById(`board-slot-${i}`);
+        const cid = state.board[i];
+        const unlocked = isBoardUnlocked(i);
+        if (cid !== null) {
+          el.className = 'w-13 h-19 sm:w-14 sm:h-20 rounded-sm cursor-pointer';
+          el.innerHTML = renderCardContent(cid);
+        } else if (unlocked) {
+          const isNext = nextSlot && nextSlot.type === 'board' && nextSlot.idx === i;
+          el.className = `slot-2009 ${isNext ? 'active' : ''} w-13 h-19 sm:w-14 sm:h-20 rounded-sm flex items-center justify-center text-[11px] md:text-[10px] text-white/85 cursor-pointer`;
+          el.textContent = boardLabels[i];
+        } else {
+          el.className = 'slot-2009 locked w-13 h-19 sm:w-14 sm:h-20 rounded-sm flex items-center justify-center text-[11px] md:text-[10px] text-white/60';
+          el.textContent = boardLabels[i];
+        }
+      }
+
+      const heroReady = state.hero[0] !== null && state.hero[1] !== null;
+      const flopReady = state.board[0] !== null && state.board[1] !== null && state.board[2] !== null;
+      const turnReady = state.board[3] !== null;
+
+      const canNext = (state.phase === 0 && heroReady) || (state.phase === 1 && flopReady) || (state.phase === 2 && turnReady);
+      document.getElementById('btn-next-step').disabled = !canNext;
+      document.getElementById('btn-undo').disabled = state.history.length === 0;
+      document.getElementById('btn-remove').disabled = state.history.length === 0;
+    }
+
+    function renderDeck() {
+      const used = getUsedSet();
+
+      // 1. Grille ordinateur (4 lignes compactes)
+      const container = document.getElementById('deck-container');
+      let html = '';
+      for (let s = 0; s < 4; s++) {
+        const suit = SUITS_BY_ID[s];
+        html += `<div class="flex items-center gap-1">`;
+        html += `<span class="w-5 text-center font-bold text-sm ${suit.color}">${suit.symbol}</span>`;
+        html += `<div class="grid gap-1 flex-1" style="grid-template-columns: repeat(13, minmax(0, 1fr));">`;
+
+        for (let r = 0; r < 13; r++) {
+          const id = s * 13 + r;
+          const card = FULL_DECK[id];
+          if (used.has(id)) {
+            html += `<button type="button" disabled class="opacity-25 bg-slate-200 border border-slate-300 rounded-sm py-1 text-[11px] font-bold text-slate-500 cursor-not-allowed">${card.code}</button>`;
+          } else {
+            html += `<button type="button" data-id="${id}" class="card-2009 deck-btn rounded-sm py-1 text-[11px] font-extrabold ${card.color} cursor-pointer">${card.code}</button>`;
+          }
+        }
+        html += `</div></div>`;
+      }
+      container.innerHTML = html;
+      container.querySelectorAll('.deck-btn').forEach(btn => {
+        btn.addEventListener('click', () => selectCard(Number(btn.dataset.id)));
+      });
+
+      // 2. Grille mobile classée par type (Trèfle, Carreau, Cœur, Pique)
+      const mobileContainer = document.getElementById('mobile-deck-container');
+      let mHtml = '';
+      for (let i = 0; i < SUITS.length; i++) {
+        const suit = SUITS[i];
+        const s = suit.deckIdx;
+        mHtml += `<div class="bg-white border border-slate-400 rounded-sm p-2">`;
+        mHtml += `<div class="font-bold text-xs mb-1.5 flex items-center gap-1 ${suit.color}"><span>${suit.symbol}</span><span>${suit.name}</span></div>`;
+        mHtml += `<div class="grid grid-cols-7 gap-1.5">`;
+        for (let r = 0; r < 13; r++) {
+          const id = s * 13 + r;
+          const card = FULL_DECK[id];
+          if (used.has(id)) {
+            mHtml += `<button type="button" disabled class="opacity-25 bg-slate-200 border border-slate-300 rounded-sm py-2 text-xs font-bold text-slate-500 cursor-not-allowed">${card.code}</button>`;
+          } else {
+            mHtml += `<button type="button" data-id="${id}" class="card-2009 mobile-deck-btn rounded-sm py-2 text-xs font-extrabold ${card.color} active:scale-95">${card.code}<span class="text-[10px] ml-0.5">${suit.symbol}</span></button>`;
+          }
+        }
+        mHtml += `</div></div>`;
+      }
+      mobileContainer.innerHTML = mHtml;
+      mobileContainer.querySelectorAll('.mobile-deck-btn').forEach(btn => {
+        btn.addEventListener('click', () => selectCard(Number(btn.dataset.id)));
+      });
+    }
+
+    function isMobileViewport() {
+      return window.innerWidth <= 768;
+    }
+
+    function updatePickerHeader() {
+      const slot = findNextSlot();
+      const labelEl = document.getElementById('picker-target-label');
+      if (!slot) {
+        labelEl.textContent = 'Toutes les cartes sont choisies';
+        return;
+      }
+      if (slot.type === 'hero') {
+        labelEl.textContent = `Ma main — Carte ${slot.idx + 1}/2`;
+      } else {
+        const names = ['Flop (1/3)', 'Flop (2/3)', 'Flop (3/3)', 'Turn', 'River'];
+        labelEl.textContent = `Table — ${names[slot.idx]}`;
+      }
+    }
+
+    function openMobilePicker() {
+      if (!isMobileViewport()) return;
+      state.pickerOpen = true;
+      updatePickerHeader();
+      document.getElementById('mobile-picker-modal').classList.remove('hidden');
+    }
+
+    function closeMobilePicker() {
+      state.pickerOpen = false;
+      document.getElementById('mobile-picker-modal').classList.add('hidden');
+    }
+
+    function renderAnalysis() {
+      const hero = state.hero.filter(c => c !== null);
+      const board = state.board.filter(c => c !== null);
+      const all = [...hero, ...board];
+
+      const titleEl = document.getElementById('combo-title');
+      const badgeEl = document.getElementById('quality-badge');
+      const noteEl = document.getElementById('short-note');
+
+      badgeEl.classList.add('hidden');
+
+      if (all.length === 0) {
+        titleEl.textContent = 'Sélectionnez vos 2 cartes';
+        noteEl.textContent = isMobileViewport()
+          ? 'Touchez « Ma main » ou « Choisir une carte ».'
+          : 'Cliquez sur 2 cartes ci-dessous pour démarrer.';
+        return;
+      }
+
+      if (hero.length === 2 && board.length === 0) {
+        const pre = getPreflopSummary(hero[0], hero[1]);
+        titleEl.textContent = pre.note;
+        badgeEl.textContent = pre.quality;
+        badgeEl.className = `text-xs font-bold px-2 py-0.5 rounded-sm border ${pre.cls}`;
+        badgeEl.classList.remove('hidden');
+        noteEl.textContent = isMobileViewport()
+          ? 'Touchez le Flop sur le tapis pour ajouter 3 cartes.'
+          : 'Cliquez sur 3 cartes pour le Flop.';
+        return;
+      }
+
+      if (all.length < 5) {
+        const sorted = all.map(id => FULL_DECK[id]).sort((a, b) => b.rankValue - a.rankValue);
+        titleEl.textContent = `Carte haute ${sorted[0].label}`;
+        noteEl.textContent = hero.length < 2 ? 'Choisissez votre 2ᵉ carte.' : 'Complétez les 3 cartes du Flop.';
+        return;
+      }
+
+      const { score, best } = evaluateBest(all);
+      const cat = score >> 20;
+      const detail = getComboDetail(cat, best);
+      const drawHint = getDrawHint(all);
+
+      titleEl.textContent = `${HAND_NAMES[cat]} (${detail})`;
+      if (hero.length === 2) {
+        const pre = getPreflopSummary(hero[0], hero[1]);
+        badgeEl.textContent = pre.quality;
+        badgeEl.className = `text-xs font-bold px-2 py-0.5 rounded-sm border ${pre.cls}`;
+        badgeEl.classList.remove('hidden');
+      }
+      noteEl.textContent = drawHint || 'Toutes les cartes sont posées.';
+    }
+
+    function findNextSlot() {
+      if (state.targetSlot) return state.targetSlot;
+      for (let i = 0; i < 2; i++) if (state.hero[i] === null) return { type: 'hero', idx: i };
+      if (state.phase >= 1) {
+        for (let i = 0; i < 3; i++) if (state.board[i] === null) return { type: 'board', idx: i };
+      }
+      if (state.phase >= 2 && state.board[3] === null) return { type: 'board', idx: 3 };
+      if (state.phase >= 3 && state.board[4] === null) return { type: 'board', idx: 4 };
+      return null;
+    }
+
+    function selectCard(cardId) {
+      if (getUsedSet().has(cardId)) return;
+      const prevPhase = state.phase;
+      let slot = findNextSlot();
+      if (!slot && state.phase < 3) {
+        advanceStep();
+        slot = findNextSlot();
+      }
+      if (!slot) return;
+
+      if (slot.type === 'hero') state.hero[slot.idx] = cardId;
+      else state.board[slot.idx] = cardId;
+
+      state.history = state.history.filter(h => !(h.type === slot.type && h.idx === slot.idx));
+      state.history.push({ type: slot.type, idx: slot.idx, cardId });
+      state.targetSlot = null;
+
+      // Avancement progressif automatique : Préflop (2) -> Flop (3) -> Turn (1) -> River (1)
+      if (state.phase === 0 && state.hero[0] !== null && state.hero[1] !== null) state.phase = 1;
+      else if (state.phase === 1 && state.board[0] !== null && state.board[1] !== null && state.board[2] !== null) state.phase = 2;
+      else if (state.phase === 2 && state.board[3] !== null) state.phase = 3;
+
+      const riverDone = state.phase === 3 && state.board[4] !== null;
+      refresh();
+
+      // Sur mobile : fermer automatiquement dès que l'étape en cours est remplie
+      if (state.pickerOpen) {
+        if (state.phase !== prevPhase || riverDone || !findNextSlot()) {
+          closeMobilePicker();
+        } else {
+          updatePickerHeader();
+        }
+      }
+    }
+
+    function handleSlotClick(type, idx) {
+      const current = type === 'hero' ? state.hero[idx] : state.board[idx];
+      if (current !== null) {
+        if (type === 'hero') state.hero[idx] = null;
+        else state.board[idx] = null;
+        state.history = state.history.filter(h => !(h.type === type && h.idx === idx));
+        state.targetSlot = { type, idx };
+        refresh();
+        if (isMobileViewport()) openMobilePicker();
+        return;
+      }
+      if (type === 'hero' || isBoardUnlocked(idx)) {
+        state.targetSlot = { type, idx };
+        refresh();
+        if (isMobileViewport()) openMobilePicker();
+      }
+    }
+
+    function advanceStep() {
+      if (state.phase === 0 && state.hero[0] !== null && state.hero[1] !== null) state.phase = 1;
+      else if (state.phase === 1 && state.board[0] !== null && state.board[1] !== null && state.board[2] !== null) state.phase = 2;
+      else if (state.phase === 2 && state.board[3] !== null) state.phase = 3;
+      state.targetSlot = null;
+      refresh();
+    }
+
+    function undoLast() {
+      if (!state.history.length) return;
+      const last = state.history.pop();
+      if (last.type === 'hero') state.hero[last.idx] = null;
+      else state.board[last.idx] = null;
+      state.targetSlot = null;
+
+      if (state.hero[0] === null || state.hero[1] === null) state.phase = 0;
+      else if (state.board[0] === null || state.board[1] === null || state.board[2] === null) state.phase = 1;
+      else if (state.board[3] === null) state.phase = 2;
+      refresh();
+    }
+
+    function resetAll() {
+      state.hero = [null, null];
+      state.board = [null, null, null, null, null];
+      state.phase = 0;
+      state.history = [];
+      state.targetSlot = null;
+      refresh();
+    }
+
+    function refresh() {
+      renderTable();
+      renderDeck();
+      renderAnalysis();
+      runSimulation();
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      for (let i = 0; i < 2; i++) {
+        document.getElementById(`hero-slot-${i}`).addEventListener('click', () => handleSlotClick('hero', i));
+      }
+      for (let i = 0; i < 5; i++) {
+        document.getElementById(`board-slot-${i}`).addEventListener('click', () => handleSlotClick('board', i));
+      }
+      document.getElementById('btn-next-step').addEventListener('click', advanceStep);
+      document.getElementById('btn-undo').addEventListener('click', undoLast);
+      document.getElementById('btn-remove').addEventListener('click', undoLast);
+      document.getElementById('btn-reset').addEventListener('click', resetAll);
+      document.getElementById('btn-new-game').addEventListener('click', resetAll);
+      document.getElementById('btn-open-picker-mobile').addEventListener('click', openMobilePicker);
+      document.getElementById('btn-close-picker').addEventListener('click', closeMobilePicker);
+      document.getElementById('mobile-picker-modal').addEventListener('click', (e) => {
+        if (e.target.id === 'mobile-picker-modal') closeMobilePicker();
+      });
+      document.getElementById('opponents-select').addEventListener('change', (e) => {
+        state.opponents = Number(e.target.value);
+        runSimulation();
+      });
+
+      refresh();
+    });
+  </script>
+</body>
+</html>
